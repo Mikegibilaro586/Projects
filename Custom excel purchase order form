@@ -1,0 +1,76 @@
+
+Option Explicit
+
+'THIS EXPORTS THE PURCHASE ORDER FORM INTO A PDF SAVED ON THE USER'S DESKTOP, WITH THE FILENAME TAKEN FROM A CELL ON THE CURRENT SHEET
+
+Private Sub CommandButton1_Click()
+
+With ActiveSheet.PageSetup
+    .Orientation = xlPortrait
+    .PrintArea = "$A$1:$I$53"
+    .Zoom = False
+    .FitToPagesTall = 1
+    .FitToPagesWide = 1
+    .CenterHorizontally = True
+    .CenterVertically = True
+End With
+Dim desktopPath As String
+desktopPath = CreateObject("WScript.Shell").specialfolders("Desktop") & "\"
+ActiveSheet.ExportAsFixedFormat _
+Filename:=desktopPath & "PO " & Range("H7"), _
+    Type:=xlTypePDF, _
+    Quality:=xlQualityStandard, _
+    IncludeDocProperties:=False, _
+    IgnorePrintAreas:=False, _
+    OpenAfterPublish:=True
+
+End Sub
+
+'THIS SAVES A COPY OF THE CURRENT EXCEL FILE IN A DIRECTORY BASED ON AN INPUT VALUE, AND OPENS THE SAVED FILE
+
+Private Sub CommandButton2_Click()
+Dim fname As String
+Dim floc As Integer
+Dim newWB As Workbook
+fname = ActiveSheet.Range("H7").Value
+floc = InputBox("Please Enter PO Year")
+On Error Resume Next
+ActiveWorkbook.SaveCopyAs "P:\Maintenance\Purchase Orders\P.O.'s\" & floc & " PO's\" & "PO E" & fname & ".xlsm"
+Workbooks.Open ("P:\Maintenance\Purchase Orders\P.O.'s\" & floc & " PO's\" & "PO E" & fname & ".xlsm")
+
+End Sub
+
+'THIS OPENS AN EXCEL FILE IN A DIRECTORY THAT LISTS ALL OF THE PREVIOUS PURCHASE ORDERS
+
+Private Sub CommandButton3_Click()
+Dim wb1 As Excel.Workbook
+Set wb1 = Workbooks.Open("P:\Maintenance\Purchase Orders\POList.xlsx")
+wb1.Activate
+End Sub
+
+'THIS COPIES A SHEET FROM AN EXISTING EXCEL FILE INTO THE CURRENT EXCEL FILE TO BE USED AS A REFERENCE
+
+Private Sub CommandButton4_Click()
+
+    Dim sourceBook As Workbook
+    Dim sYear As String
+    Dim sBook As String
+    
+    Application.ScreenUpdating = False
+    sYear = InputBox("Input PO Year (Example: 2019)")
+    sBook = InputBox("Enter PO Number (Example: E12345)")
+    Set sourceBook = Workbooks.Open("P:\Maintenance\Purchase Orders\P.O.'s\" & sYear & " PO's\" & "PO " & sBook & ".xls" & "*")
+    ThisWorkbook.Saved = True
+    sourceBook.Sheets("Sheet1").Copy after:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count)
+    sourceBook.Close savechanges:=False
+    Application.ScreenUpdating = True
+
+End Sub
+
+'THIS BUTTON OPENS A CAPITAL EXPENDITURE PROJECT LIST FOR REFERENCE
+
+Private Sub CommandButton5_Click()
+Dim wb1 As Excel.Workbook
+Set wb1 = Workbooks.Open("P:\Maintenance\Maint and Engrg\Projects\JOBLIST2016.xls")
+wb1.Activate
+End Sub
