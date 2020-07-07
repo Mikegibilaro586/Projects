@@ -1,2 +1,2 @@
 # Projects
-Some projects that I have created over the years to help improve efficiency and automate processes. They are mostly written in Visual Basic, along with some sections using database connections and SQL queries.
+Some projects that I have created over the years to help improve efficiency and automate processes. They contain a combination of external program API, database connections, SQL queries, and recordsets, among others.
