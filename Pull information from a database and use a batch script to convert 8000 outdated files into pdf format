@@ -1,0 +1,163 @@
+Option Compare Database
+Option Explicit
+
+    Dim DatacardTable As Recordset
+    Dim SQLDatacardTable As String
+    Dim SubPartTable As Recordset
+    Dim SQLSubPartTable As String
+    Dim i As Integer
+    Dim SubPartID(10)     As Variant
+    Dim SubDesc(10)       As Variant
+    Dim SubQty(10)        As Double
+    Dim SubUnits(10)      As Variant
+Public Function Part()
+
+    Dim RowID As Integer
+    Dim WorkorderBaseID As String
+    Dim WorkOrderLotID As Variant
+    Dim EngineeringMstr As Variant
+    Dim ID As String
+    
+    Dim Description As String
+    Dim DrawnDate As Date
+    Dim DrawnBy As String
+    Dim CheckedBy As String
+    Dim DrawingNo As String
+    Dim Rev As String
+    Dim Notes As String
+    Dim Specification As String
+    Dim dbcurrent As Database
+    Set dbcurrent = CurrentDb()
+    
+    Dim DatacardTable As Recordset
+    Dim SQLDatacardTable As String
+    Dim SubPartTable As Recordset
+    Dim SQLSubPartTable As String
+
+    
+'    This macro queries the SQLDatacardTable table and matches variables to the parts that have a drawing_id number associated.
+'    It ignores parts that do not have a drawing
+'    It also checks if a part has subordinate parts, and lists them in the ttb file accordingly
+'    You can comment out the MsgBox commands to run the macro without interruption
+    
+    
+    
+ 
+    
+    'SQL Statements
+    
+    SQLDatacardTable = "SELECT * FROM [DataCard Info]"
+    Set DatacardTable = dbcurrent.OpenRecordset(SQLDatacardTable, dbOpenDynaset, dbSeeChanges)
+    
+       
+    Do While Not DatacardTable.EOF
+        
+        Do While IsNull(DatacardTable!Drawing_ID)
+    'For testing, comment out MsgBox to prevent pop-up
+        MsgBox ("NO")
+        DatacardTable.MoveNext
+        Loop
+        
+        ID = (DatacardTable!Part_Number)
+        'ID = "BAK1100G"
+        DrawingNo = (DatacardTable!Drawing_ID & "")
+        Description = (DatacardTable!Description)
+        EngineeringMstr = (DatacardTable!Engineering_Master)
+        
+        DrawnBy = (DatacardTable!Drawn_By & "")
+        'MsgBox (DrawnBy)
+        CheckedBy = (DatacardTable!Checked_By & "")
+        'MsgBox (CheckedBy)
+        
+       
+        
+        If IsNull(DatacardTable!Date) Then
+        DrawnDate = vbNull
+        Else: DrawnDate = (DatacardTable!Date)
+        End If
+        
+        Rev = (DatacardTable!Revision & "")
+        Notes = (DatacardTable!Notations & "")
+    'For testing, comment out MsgBox to prevent pop-up
+        MsgBox (DrawingNo & vbCrLf & Description & vbCrLf & EngineeringMstr & vbCrLf & DrawnBy & vbCrLf & CheckedBy & vbCrLf & DrawnDate & vbCrLf & DrawingNo & vbCrLf & Rev & vbCrLf & Notes & vbCrLf)
+        
+       
+'Print variables to TTB file
+        
+Dim Textfile As String
+Textfile = DrawingNo
+Dim FilePath As String
+'Textfile = FreeFile
+'FilePath = "C:\Users\MichaelG\Desktop\" & "TextFile" & ".ttb"
+FilePath = "\\evc.local\dfs\data\Cad-files\TTB\" & Textfile & ".ttb"
+'Open "EVDB" & CInt(temp1) & ".ttb" For Output As #1  ' Open file for output.
+
+Open FilePath For Output As #1  ' Open file for output.
+
+Print #1, "-TitleBlockFileDir      \\evc.local\dfs\data\CAD-FILES\TitleBlocks\"
+Print #1, "-DiffViews              ON"
+
+    Print #1, "-StartSheet"
+    Print #1, "-FontSize               18"
+    Print #1, "-FontColor              Red"
+    Print #1, "-Description            "; Description
+    Print #1, "-FontSize               10"
+    Print #1, "-DrawnBy                "; DrawnBy
+    Print #1, "-Date                   "; Format(DrawnDate, " mmm d yyyy")
+    Print #1, "-Scale                  None"
+    Print #1, "-CheckedBy              "; UCase(CheckedBy)
+    Print #1, "-FontSize               18"
+    Print #1, "-DrawingNo              "; DrawingNo
+    Print #1, "-Rev                    "; Rev
+    Print #1, "-FontSize               9"
+    Print #1, "-Notes                  "; Notes
+    Print #1, "-FontSize               14"
+    Print #1, "-Specification          "; Specification
+    Print #1, "-DrawingFile            \\evc.local\dfs\data\Cad-files\Dxffiles\Current\"; DrawingNo; ".dxf"
+    Print #1, "-TitleBlockOrientation  part"
+    Print #1, "-FontSize               10"
+    Print #1, "-DiffViews              ON"
+        
+        
+        SQLSubPartTable = "SELECT * FROM [SubParts] " & "WHERE PART_NUMBER = " & Chr$(39) & ID & Chr$(39)
+        Set SubPartTable = dbcurrent.OpenRecordset(SQLSubPartTable, dbOpenDynaset, dbSeeChanges)
+    
+            'Dim i As Integer
+        i = 10
+        Do While SubPartTable.EOF = False
+        
+        SubPartID(i) = (SubPartTable!PART_ID)
+        SubDesc(i) = (SubPartTable!Description)
+        SubQty(i) = (SubPartTable!QTY_PER)
+        SubUnits(i) = (SubPartTable!USAGE_UM & "")
+    'For testing, comment out MsgBox to prevent pop-up
+        MsgBox (ID & vbCrLf & SubPartID(i) & vbCrLf & SubDesc(i) & vbCrLf & SubQty(i) & vbCrLf & SubUnits(i))
+        
+    Print #1, "-No" & i & "                "; i
+    Print #1, "-PartID" & i & "             "; SubPartID(i)
+    Print #1, "-Description" & i & "        "; SubDesc(i)
+    Print #1, "-Qty" & i & "               "; Math.Round(SubQty(i), 3)
+    Print #1, "-Units" & i & "                "; SubUnits(i)
+   
+        
+        i = i - 1
+        SubPartTable.MoveNext
+        Loop
+        
+     Print #1, "-EndSheet"
+     Close #1    ' Close file.
+'Uncomment below to have notepad automatically open the TTB file for review
+    'Call Shell("C:\WINDOWS\notepad.exe " & FilePath)
+    
+         DatacardTable.MoveNext
+    
+    Loop
+         
+         
+  End Function
+
+
+
+
+
+
