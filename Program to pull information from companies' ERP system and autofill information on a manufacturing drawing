@@ -1,3 +1,5 @@
+' Please see comments below for each section, for a description of what each does in the program.
+
 Option Explicit
 
 Dim swApp               As SldWorks.SldWorks
@@ -82,7 +84,7 @@ Sub main()
     
     'MsgBox (strSQL)
     
-    strSQL = "SELECT * FROM dbo.requirement " & _
+    strSQL2 = "SELECT * FROM dbo.requirement " & _
          "WHERE [WORKORDER_BASE_ID] = " & Chr$(39) & Partval & Chr$(39)
     
     'Open Connection'
