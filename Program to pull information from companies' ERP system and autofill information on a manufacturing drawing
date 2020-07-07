@@ -1,0 +1,243 @@
+Option Explicit
+
+Dim swApp               As SldWorks.SldWorks
+Dim swModel             As SldWorks.ModelDoc2
+Dim swCustPropMgr       As SldWorks.CustomPropertyManager
+Dim names               As Variant
+Dim name                As Variant
+Dim textexp             As String
+Dim evalval             As String
+
+Sub main()
+'GetDataFromADO()
+    
+    'Declare variables'
+    Dim Part As String
+    Dim Partval As Variant
+    Dim Spl As String
+    
+    'Connection Variable
+    Dim cn As New ADODB.Connection
+    
+    'First Recordset Variable
+    Dim rs As ADODB.Recordset
+    'Second Recordset Variable
+    Dim rs2 As ADODB.Recordset
+    'Third Recordset Variable
+    Dim rs3 As ADODB.Recordset
+    
+    'SQL Statements to Create Record Tables
+    Dim strSQL As String
+    Dim strSQL2 As String
+    Dim strSQL3 As String
+    
+    'Solidworks Initialization
+    
+    Set swApp = Application.SldWorks
+    Set swModel = swApp.ActiveDoc
+    Set swCustPropMgr = swModel.Extension.CustomPropertyManager("")
+    
+    'Takes name of drawing, which is based on the part, and splits the title to only have the name of the part
+    Part = swModel.GetTitle
+    Partval = Split(Part, " ")(0)
+    MsgBox (Partval)
+ 
+'For Each name In names
+ 
+'    swCustPropMgr.Get2 name, textexp, evalval
+ 
+'    Debug.Print name & " = " & evalval
+   
+'    MsgBox name & " = " & evalval
+ 
+' Next name
+        
+    
+    'Part = "$PRP:" & Chr(34) & "SW-File Name" & Chr(34)
+    'MsgBox (Part)
+    
+    'Part Variables
+    Dim ID As String
+    Dim Title As String
+    Dim WO As String
+    Dim DESC As String
+    
+    'Subordinate Part Variables from Engineering Master
+    Dim SubWOID(0, 4)       As String
+    Dim PartID(0, 4)        As String
+    Dim SubPartID(0, 4)     As String
+    Dim SubLotID(0, 4)      As String
+    Dim SubQty(0, 4)        As String
+    Dim SubUnits(0, 4)      As String
+    Dim SubDesc(0, 4)       As String
+    Dim QTY(0, 4)           As String
+    Dim Units(0, 4)         As String
+    Dim SPID                As String
+    Dim WOLID               As String
+    
+    'SQL Statements
+  
+    strSQL = "SELECT * FROM dbo.part " & _
+         "WHERE [ID] = " & Chr$(39) & Partval & Chr$(39)
+    
+    'MsgBox (strSQL)
+    
+    strSQL = "SELECT * FROM dbo.requirement " & _
+         "WHERE [WORKORDER_BASE_ID] = " & Chr$(39) & Partval & Chr$(39)
+    
+    'Open Connection'
+        Set cn = New ADODB.Connection
+        cn.Open _
+            "Provider=sqloledb;" & _
+            "Data Source=EVC-SQL-01;" & _
+            "Initial Catalog=EVC;" & _
+            "User ID=sysadm;" & _
+            "Password=EVCPass15!;"
+
+    'Create popup to verify connection is OK (For testing)
+    If cn.State = adStateOpen Then
+       ' MsgBox "CONNECTION OK"
+    Else
+       ' MsgBox "CONNECTION FAILED"
+    End If
+    
+    'Create a Recordset by executing a SQL Statement
+    Set rs = cn.Execute(strSQL)
+    
+    Set rs2 = cn.Execute(strSQL2)
+    
+    WOLID = rs2!WORKORDER_LOT_ID
+    MsgBox (WOLID)
+    
+    'Test recordset values
+    Dim fld As ADODB.Field
+    Dim F As Variant
+    Dim eval As String
+    Dim evalout As String
+    Dim eval2 As String
+    Dim evalout2 As String
+    Dim GP As Variant
+    Dim GP2 As Variant
+    
+    
+    If rs.EOF Then
+    MsgBox ("EOF")
+    Else
+    
+        ID = (rs!ID & vbCrLf)
+        Title = rs!Description & vbCrLf
+        MsgBox (ID & Title)
+        
+    End If
+    
+    'Loop for Subordinate Parts
+     
+     Dim i As Integer
+     'Checks to see when LOT ID changes, since some parts have multiple masters in the recordset
+     'Can add an input box to choose master in the future
+     If rs2.EOF Then
+     MsgBox ("End Of Record")
+     Else
+     
+     Do Until WOLID <> rs2!WORKORDER_LOT_ID
+     On Error Resume Next
+     
+        For i = 0 To 4
+        SubWOID(0, i) = rs2!WORKORDER_BASE_ID & vbCrLf
+        SubLotID(0, i) = rs2!WORKORDER_LOT_ID & vbCrLf
+        SubPartID(0, i) = rs2!PART_ID
+        SubQty(0, i) = rs2!QTY_PER & vbCrLf
+        SubUnits(0, i) = rs2!USAGE_UM & vbCrLf
+        
+        
+        
+        'SQL Search for Subordinate Parts
+        strSQL3 = "SELECT * FROM dbo.part " & _
+        "WHERE [ID] = " & Chr$(39) & SubPartID(0, i) & Chr$(39)
+        MsgBox (strSQL3)
+    
+        
+         Set rs3 = cn.Execute(strSQL3)
+        'MsgBox (rs3!Description)
+         SubDesc(0, i) = rs3!Description & vbCrLf
+         MsgBox (SubDesc(0, i))
+        
+      
+        'Debug
+         MsgBox ("Part " & SubWOID(0, i) & " Sub Part ID " & SubPartID(0, i) & " Sub Lot ID " & SubLotID(0, i) & " Sub Qty " & SubQty(0, i) & " Sub Units " & SubUnits(0, i) & " Sub Desc " & SubDesc(0, i))
+         
+         
+         'Set Title Block Fields to null (Need to complete)
+         swCustPropMgr.Set "DrawingNo", ""
+         swCustPropMgr.Set "Title", ""
+         
+         'Link custom properties in title block to variables
+         swCustPropMgr.Set "DrawingNo", ID
+         swCustPropMgr.Set "Title", Title
+         
+         
+         'Subordinate Part ID's
+         swCustPropMgr.Set "PartID" & i, SubPartID(0, i)
+         swCustPropMgr.Set "QTY" & i, SubQty(0, i)
+         swCustPropMgr.Set "UNITS" & i, SubUnits(0, i)
+         swCustPropMgr.Set "DESC" & i, SubDesc(0, i)
+         GP = swCustPropMgr.Get3("PartID" & i, False, eval, evalout)
+         GP2 = swCustPropMgr.Get3("DESC" & i, False, eval2, evalout2)
+         
+         
+         'Debug
+         MsgBox ("SW" & vbCrLf & evalout & vbCrLf & evalout2)
+         'Resets recordset for subordinate parts
+         Set rs3 = Nothing
+         rs2.MoveNext
+         Next i
+         Loop
+         End If
+      
+      
+    
+    
+    'Link Variables to Solidworks Custom Properties in Drawing (Need to complete)
+    
+
+    'Close connections and release recordsets
+    cn.Close
+    Set rs = Nothing
+    Set rs2 = Nothing
+    End Sub
+
+  
+  
+  
+  'FOR REFERENCE
+  
+  'Set and Excecute SQL Command'
+   ' Set rs = New ADODB.Recordset
+        'strSQL = "use [EVC] select DESCRIPTION from SYSADM_PART; SET NOCOUNT ON;"
+      
+        
+        
+    'Open Recordset'
+       
+                
+              '  Do While Not rs.EOF
+                 '   Debug.Print Desc
+                 '   rs.MoveNext
+                    
+                 '   Loop
+                    
+       ' End With
+       'Set rs = cn.Execute(strSQL)
+       
+        'cn.Close
+        
+   
+        
+        
+       ' Set rs = Nothing
+       ' Set cn = Nothing
+        
+        
+
+    'Copy Data to Excel'
+    '    ActiveSheet.Range("A1").CopyFromRecordset (objMyRecordset)
