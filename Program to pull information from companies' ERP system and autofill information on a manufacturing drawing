@@ -1,7 +1,8 @@
-' Please see comments below for each section, for a description of what each does in the program.
+'Please see comments below for each section, for a description of what each does in the program.
 
 Option Explicit
 
+'Declare variables based on Solidworks API
 Dim swApp               As SldWorks.SldWorks
 Dim swModel             As SldWorks.ModelDoc2
 Dim swCustPropMgr       As SldWorks.CustomPropertyManager
@@ -11,7 +12,7 @@ Dim textexp             As String
 Dim evalval             As String
 
 Sub main()
-'GetDataFromADO()
+'GetDataFromADO() - Pulling data from the ERP system
     
     'Declare variables'
     Dim Part As String
@@ -33,30 +34,29 @@ Sub main()
     Dim strSQL2 As String
     Dim strSQL3 As String
     
-    'Solidworks Initialization
-    
+    'Solidworks Initialization - Sets up variables to open the program and set the active document to the drawing
     Set swApp = Application.SldWorks
     Set swModel = swApp.ActiveDoc
     Set swCustPropMgr = swModel.Extension.CustomPropertyManager("")
     
     'Takes name of drawing, which is based on the part, and splits the title to only have the name of the part
+    'This removes the extension from the file name and allows it to be used in a query
     Part = swModel.GetTitle
     Partval = Split(Part, " ")(0)
     MsgBox (Partval)
- 
-'For Each name In names
- 
-'    swCustPropMgr.Get2 name, textexp, evalval
- 
-'    Debug.Print name & " = " & evalval
-   
-'    MsgBox name & " = " & evalval
- 
-' Next name
-        
-    
+
+'For Debug
+    'For Each name In names 
+    '    swCustPropMgr.Get2 name, textexp, evalval
+    '    Debug.Print name & " = " & evalval
+    '    MsgBox name & " = " & evalval
+    ' Next name
+'End Debug
+
+'For Debug
     'Part = "$PRP:" & Chr(34) & "SW-File Name" & Chr(34)
     'MsgBox (Part)
+'End Debug    
     
     'Part Variables
     Dim ID As String
@@ -91,16 +91,16 @@ Sub main()
         Set cn = New ADODB.Connection
         cn.Open _
             "Provider=sqloledb;" & _
-            "Data Source=EVC-SQL-01;" & _
+            "Data Source=SQL-01;" & _
             "Initial Catalog=EVC;" & _
             "User ID=sysadm;" & _
-            "Password=EVCPass15!;"
+            "Password=123456789;"
 
-    'Create popup to verify connection is OK (For testing)
+    'Create popup to verify connection is OK (For Debug)
     If cn.State = adStateOpen Then
-       ' MsgBox "CONNECTION OK"
+        MsgBox "CONNECTION OK"
     Else
-       ' MsgBox "CONNECTION FAILED"
+        MsgBox "CONNECTION FAILED"
     End If
     
     'Create a Recordset by executing a SQL Statement
@@ -132,15 +132,18 @@ Sub main()
         
     End If
     
-    'Loop for Subordinate Parts
+    'Loop for Subordinate Parts - which make up the master part
      
      Dim i As Integer
      'Checks to see when LOT ID changes, since some parts have multiple masters in the recordset
      'Can add an input box to choose master in the future
+     
+     'Checking to see if recordset is empty
      If rs2.EOF Then
      MsgBox ("End Of Record")
      Else
      
+     'Loops through all records until the LOT ID changes - up to a limit of 4 times
      Do Until WOLID <> rs2!WORKORDER_LOT_ID
      On Error Resume Next
      
@@ -151,8 +154,7 @@ Sub main()
         SubQty(0, i) = rs2!QTY_PER & vbCrLf
         SubUnits(0, i) = rs2!USAGE_UM & vbCrLf
         
-        
-        
+     
         'SQL Search for Subordinate Parts
         strSQL3 = "SELECT * FROM dbo.part " & _
         "WHERE [ID] = " & Chr$(39) & SubPartID(0, i) & Chr$(39)
@@ -167,16 +169,14 @@ Sub main()
       
         'Debug
          MsgBox ("Part " & SubWOID(0, i) & " Sub Part ID " & SubPartID(0, i) & " Sub Lot ID " & SubLotID(0, i) & " Sub Qty " & SubQty(0, i) & " Sub Units " & SubUnits(0, i) & " Sub Desc " & SubDesc(0, i))
-         
-         
-         'Set Title Block Fields to null (Need to complete)
+          
+         'Empty title block fields - in case information already exists 
          swCustPropMgr.Set "DrawingNo", ""
          swCustPropMgr.Set "Title", ""
          
-         'Link custom properties in title block to variables
+         'Link custom properties in title block to variables - allows for data from SQL query to be filled into drawing in SolidWorks
          swCustPropMgr.Set "DrawingNo", ID
          swCustPropMgr.Set "Title", Title
-         
          
          'Subordinate Part ID's
          swCustPropMgr.Set "PartID" & i, SubPartID(0, i)
@@ -186,7 +186,6 @@ Sub main()
          GP = swCustPropMgr.Get3("PartID" & i, False, eval, evalout)
          GP2 = swCustPropMgr.Get3("DESC" & i, False, eval2, evalout2)
          
-         
          'Debug
          MsgBox ("SW" & vbCrLf & evalout & vbCrLf & evalout2)
          'Resets recordset for subordinate parts
@@ -195,23 +194,19 @@ Sub main()
          Next i
          Loop
          End If
+         
       
-      
-    
-    
-    'Link Variables to Solidworks Custom Properties in Drawing (Need to complete)
-    
-
-    'Close connections and release recordsets
+    'Close connections and release recordsets - avoids keeping old connections open and harming performance
     cn.Close
     Set rs = Nothing
     Set rs2 = Nothing
-    End Sub
+  
+End Sub
 
   
+
   
-  
-  'FOR REFERENCE
+  'COMMON FUNCTIONS FOR REFERENCE BELOW
   
   'Set and Excecute SQL Command'
    ' Set rs = New ADODB.Recordset
