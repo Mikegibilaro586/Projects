@@ -32,7 +32,7 @@ Private Sub CommandButton2_Click()
 Dim fname As String
 Dim floc As Integer
 Dim newWB As Workbook
-fname = ActiveSheet.Range("H7").Value
+fname = ActiveSheet.Range("H7").Value 
 floc = InputBox("Please Enter PO Year")
 On Error Resume Next
 ActiveWorkbook.SaveCopyAs "P:\Maintenance\Purchase Orders\P.O.'s\" & floc & " PO's\" & "PO E" & fname & ".xlsm"
