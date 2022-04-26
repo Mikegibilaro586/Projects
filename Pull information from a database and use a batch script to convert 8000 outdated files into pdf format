@@ -40,15 +40,10 @@ Public Function Part()
 '    It also checks if a part has subordinate parts, and lists them in the ttb file accordingly
 '    You can comment out the MsgBox commands to run the macro without interruption
     
-    
-    
- 
-    
     'SQL Statements
     
     SQLDatacardTable = "SELECT * FROM [DataCard Info]"
-    Set DatacardTable = dbcurrent.OpenRecordset(SQLDatacardTable, dbOpenDynaset, dbSeeChanges)
-    
+    Set DatacardTable = dbcurrent.OpenRecordset(SQLDatacardTable, dbOpenDynaset, dbSeeChanges)  
        
     Do While Not DatacardTable.EOF
         
@@ -58,8 +53,7 @@ Public Function Part()
         DatacardTable.MoveNext
         Loop
         
-        ID = (DatacardTable!Part_Number)
-        'ID = "BAK1100G"
+        ID = (DatacardTable!Part_Number) 
         DrawingNo = (DatacardTable!Drawing_ID & "")
         Description = (DatacardTable!Description)
         EngineeringMstr = (DatacardTable!Engineering_Master)
@@ -68,9 +62,7 @@ Public Function Part()
         'MsgBox (DrawnBy)
         CheckedBy = (DatacardTable!Checked_By & "")
         'MsgBox (CheckedBy)
-        
-       
-        
+           
         If IsNull(DatacardTable!Date) Then
         DrawnDate = vbNull
         Else: DrawnDate = (DatacardTable!Date)
@@ -82,7 +74,7 @@ Public Function Part()
         MsgBox (DrawingNo & vbCrLf & Description & vbCrLf & EngineeringMstr & vbCrLf & DrawnBy & vbCrLf & CheckedBy & vbCrLf & DrawnDate & vbCrLf & DrawingNo & vbCrLf & Rev & vbCrLf & Notes & vbCrLf)
         
        
-'Print variables to TTB file
+'Print variables to TTB file (Format of the file used by the legacy program to generate drawings)
         
 Dim Textfile As String
 Textfile = DrawingNo
